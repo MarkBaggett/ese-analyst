@@ -96,9 +96,9 @@ def smart_retrieve(ese_table, ese_record_num, column_number):
     elif col_type == pyesedb.column_types.FLOAT_32BIT:
         col_data = 0.0 if not col_data else struct.unpack('f',col_data)[0]
     elif col_type == pyesedb.column_types.GUID:
-    col_data = str(uuid.UUID(col_data.encode('hex')))    
+        col_data = str(uuid.UUID(col_data.encode('hex')))    
     elif col_type == pyesedb.column_types.INTEGER_16BIT_SIGNED:
-    col_data = 0 if not col_data else struct.unpack('h',col_data)[0]
+        col_data = 0 if not col_data else struct.unpack('h',col_data)[0]
     elif col_type == pyesedb.column_types.INTEGER_16BIT_UNSIGNED:
         col_data = 0 if not col_data else struct.unpack('H',col_data)[0]
     elif col_type == pyesedb.column_types.INTEGER_32BIT_SIGNED:
@@ -165,10 +165,10 @@ ads = (x for x in ["Mark Baggett and Don Williams wrote this program in 3 days. 
        ])
 
 parser = argparse.ArgumentParser(description="Given an ESE database it will create an XLS spreadsheet with analysis of the data in the database.")
-parser.add_argument("--ESE_INFILE", help ="Specify the ESE (.dat) file to analyze. Provide a valid path to the file.")
-parser.add_argument("--XLSX_OUTFILE", default="SRUM_DUMP_OUTPUT.xlsx", help="Full path to the XLS file that will be created.")
-parser.add_argument("--XLSX_TEMPLATE" ,help = "The Excel Template that specifies what data to extract from the srum database. You can create templates with ese_template.py.")
-parser.add_argument("--quiet",help = "Supress unneeded output messages.",action="store_true")
+parser.add_argument("--ESE_INFILE","-i", help ="Specify the ESE (.dat) file to analyze. Provide a valid path to the file.")
+parser.add_argument("--XLSX_OUTFILE","-o", default="SRUM_DUMP_OUTPUT.xlsx", help="Full path to the XLS file that will be created.")
+parser.add_argument("--XLSX_TEMPLATE","-t", help = "The Excel Template that specifies what data to extract from the srum database. You can create templates with ese_template.py.")
+parser.add_argument("--quiet","-q",help = "Supress unneeded output messages.",action="store_true")
 
 options = parser.parse_args()
 

@@ -5,9 +5,9 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Search the file system for ESE database.")
 parser.add_argument("START_PATH", help ="Where to begin the recursive search")
-parser.add_argument("--OUTPUT_FOLDER", help="Path to a directory where you write templates ")
-parser.add_argument("--PATH_TO_ESE_TEMPLATE", help="Path to a ese_template executable")
-parser.add_argument("--create_templates",help = "Launch ese_template to create templates",action="store_true")
+parser.add_argument("--OUTPUT_FOLDER","-o", help="Path to a directory where you write templates ")
+parser.add_argument("--PATH_TO_ESE_TEMPLATE","-p", help="Path to a ese_template executable")
+parser.add_argument("--create_templates","-c",help = "Launch ese_template to create templates",action="store_true")
 
 options = parser.parse_args()
 

@@ -7,7 +7,7 @@ import datetime
 
 parser = argparse.ArgumentParser(description="Given an ESE database this will create a sample template file for ese_dump.py")
 parser.add_argument("ESE_INFILE", help ="Specify a valid filename (optionally with path) to the ESE (.dat) file to create a template for.")
-parser.add_argument("--XLS_OUTFILE",dest="xlsoutfile", help = "Specify a Full path to the new XLS file that will be created. If not provided it will create an xlsx file with the same prefix as the ESE filename.")
+parser.add_argument("--XLS_OUTFILE","-x", dest="xlsoutfile", help = "Specify a Full path to the new XLS file that will be created. If not provided it will create an xlsx file with the same prefix as the ESE filename.")
 
 options = parser.parse_args()
 
