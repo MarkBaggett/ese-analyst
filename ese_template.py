@@ -3,8 +3,7 @@ import openpyxl
 import argparse
 import struct
 import uuid
-
-
+import datetime
 
 parser = argparse.ArgumentParser(description="Given an ESE database this will create a sample template file for ese_dump.py")
 parser.add_argument("ESE_INFILE", help ="Specify a valid filename (optionally with path) to the ESE (.dat) file to create a template for.")
@@ -14,6 +13,12 @@ options = parser.parse_args()
 
 if not options.xlsoutfile:
     options.xlsoutfile = options.ESE_INFILE+".xlsx"
+
+def ole_timestamp(binblob,timeformat="%Y-%m-%d %H:%M:%S"):
+    #converts a hex encoded OLE time stamp to a time string
+    ts = struct.unpack("<d",binblob)[0]
+    dt = datetime(1899,12,30,0,0,0) + timedelta(days=ts)
+    return  dt.strftime(timeformat)
 
 def blob_to_string(binblob):
     try:
@@ -40,7 +45,7 @@ def smart_retrieve(ese_table, ese_record_num, column_number):
     elif col_type == pyesedb.column_types.CURRENCY:
         pass
     elif col_type == pyesedb.column_types.DATE_TIME:
-        pass
+        col_data = ole_timestamp(col_data)
     elif col_type == pyesedb.column_types.DOUBLE_64BIT:
         col_data = 0 if not col_data else struct.unpack('d',col_data)[0]
     elif col_type == pyesedb.column_types.FLOAT_32BIT:

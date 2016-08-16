@@ -92,23 +92,23 @@ def smart_retrieve(ese_table, ese_record_num, column_number):
     elif col_type == pyesedb.column_types.DATE_TIME:
         col_data = ole_timestamp(col_data)
     elif col_type == pyesedb.column_types.DOUBLE_64BIT:
-        col_data = struct.unpack('d',col_data)[0]
+        col_data = 0 if not col_data else struct.unpack('d',col_data)[0]
     elif col_type == pyesedb.column_types.FLOAT_32BIT:
-        col_data = struct.unpack('f',col_data)[0]
+        col_data = 0.0 if not col_data else struct.unpack('f',col_data)[0]
     elif col_type == pyesedb.column_types.GUID:
-        pass
+    col_data = str(uuid.UUID(col_data.encode('hex')))    
     elif col_type == pyesedb.column_types.INTEGER_16BIT_SIGNED:
-        col_data = struct.unpack('h',col_data)[0]
+    col_data = 0 if not col_data else struct.unpack('h',col_data)[0]
     elif col_type == pyesedb.column_types.INTEGER_16BIT_UNSIGNED:
-        col_data = struct.unpack('H',col_data)[0]
+        col_data = 0 if not col_data else struct.unpack('H',col_data)[0]
     elif col_type == pyesedb.column_types.INTEGER_32BIT_SIGNED:
-        col_data =  struct.unpack('i',col_data)[0]
+        col_data =  0 if not col_data else struct.unpack('i',col_data)[0]
     elif col_type == pyesedb.column_types.INTEGER_32BIT_UNSIGNED:
-        col_data = struct.unpack('I',col_data)[0]
+        col_data = 0 if not col_data else struct.unpack('I',col_data)[0]
     elif col_type == pyesedb.column_types.INTEGER_64BIT_SIGNED:
-        col_data = struct.unpack('q',col_data)[0]
+        col_data = 0 if not col_data else struct.unpack('q',col_data)[0]
     elif col_type == pyesedb.column_types.INTEGER_8BIT_UNSIGNED:
-        col_data = struct.unpack('B',col_data)[0]
+        col_data = 0 if not col_data else struct.unpack('B',col_data)[0]
     elif col_type == pyesedb.column_types.LARGE_BINARY_DATA:
         col_data = "" if not col_data else col_data.encode("HEX")
     elif col_type == pyesedb.column_types.LARGE_TEXT:
