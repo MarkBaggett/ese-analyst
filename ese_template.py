@@ -32,7 +32,7 @@ def smart_retrieve(ese_table, ese_record_num, column_number):
     rec = ese_table.get_record(ese_record_num)
     col_type = rec.get_column_type(column_number)
     col_data = rec.get_value_data(column_number)
-    print "rec:%s  col:%s type:%s %s" % (ese_record_num, column_number, col_type, ese_column_types[col_type])
+    #print "rec:%s  col:%s type:%s %s" % (ese_record_num, column_number, col_type, ese_column_types[col_type])
     if col_type == pyesedb.column_types.BINARY_DATA:
         col_data = "" if not col_data else col_data.encode("HEX")
     elif col_type == pyesedb.column_types.BOOLEAN:

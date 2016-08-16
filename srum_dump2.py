@@ -135,50 +135,51 @@ def load_lookups(database):
                 #print rec_entry
 
 def smart_retrieve(ese_table, ese_record_num, column_number):
-    ese_column_types = {0: 'NULL', 1: 'BOOLEAN', 2: 'INTEGER_8BIT_UNSIGNED', 3: 'INTEGER_16BIT_SIGNED', 4: 'INTEGER_32BIT_SIGNED', 5: 'CURRENCY', 6: 'FLOAT_32BIT', 7: 'DOUBLE_64BIT', 8: 'DATE_TIME', 9: 'BINARY_DATA', 10: 'TEXT', 11: 'LARGE_BINARY_DATA', 12: 'LARGE_TEXT', 13: 'SUPER_LARGE_VALUE', 14: 'INETEGER_32BIT_UNSIGNED', 15: 'INTEGER_64BIT_SIGNED', 16: 'GUID', 17: 'INTEGER_16BIT_UNSIGNED'}
-    rec = ese_table.get_record(ese_record_num)
-    col_type = rec.get_column_type(column_number)
-    col_data = rec.get_value_data(column_number)
-    #print "rec:%s  col:%s type:%s %s" % (ese_record_num, column_number, col_type, ese_column_types[col_type])
-    if col_type == pyesedb.column_types.BINARY_DATA:
-        col_data = "" if not col_data else col_data.encode("HEX")
-    elif col_type == pyesedb.column_types.BOOLEAN:
-        col_data = struct.unpack('?',col_data)[0]
-    elif col_type == pyesedb.column_types.CURRENCY:
-        pass
-    elif col_type == pyesedb.column_types.DATE_TIME:
-        pass
-    elif col_type == pyesedb.column_types.DOUBLE_64BIT:
-        col_data = struct.unpack('d',col_data)[0]
-    elif col_type == pyesedb.column_types.FLOAT_32BIT:
-        col_data = struct.unpack('f',col_data)[0]
-    elif col_type == pyesedb.column_types.GUID:
-        pass
-    elif col_type == pyesedb.column_types.INTEGER_16BIT_SIGNED:
-        col_data = struct.unpack('h',col_data)[0]
-    elif col_type == pyesedb.column_types.INTEGER_16BIT_UNSIGNED:
-        col_data = struct.unpack('H',col_data)[0]
-    elif col_type == pyesedb.column_types.INTEGER_32BIT_SIGNED:
-        col_data =  struct.unpack('i',col_data)[0]
-    elif col_type == pyesedb.column_types.INTEGER_32BIT_UNSIGNED:
-        col_data = struct.unpack('I',col_data)[0]
-    elif col_type == pyesedb.column_types.INTEGER_64BIT_SIGNED:
-        col_data = struct.unpack('q',col_data)[0]
-    elif col_type == pyesedb.column_types.INTEGER_8BIT_UNSIGNED:
-        col_data = struct.unpack('B',col_data)[0]
-    elif col_type == pyesedb.column_types.LARGE_BINARY_DATA:
-        col_data = "" if not col_data else col_data.encode("HEX")
-    elif col_type == pyesedb.column_types.LARGE_TEXT:
-        col_data = blob_to_string(col_data)
-    elif col_type == pyesedb.column_types.NULL:
-        pass
-    elif col_type == pyesedb.column_types.SUPER_LARGE_VALUE:
-        col_data = "" if not col_data else col_data.encode("HEX")
-    elif col_type == pyesedb.column_types.TEXT:
-        col_data = blob_to_string(col_data)       
-    if col_data==None:
-        col_data = "Empty"
-    return col_data
+	ese_column_types = {0: 'NULL', 1: 'BOOLEAN', 2: 'INTEGER_8BIT_UNSIGNED', 3: 'INTEGER_16BIT_SIGNED', 4: 'INTEGER_32BIT_SIGNED', 5: 'CURRENCY', 6: 'FLOAT_32BIT', 7: 'DOUBLE_64BIT', 8: 'DATE_TIME', 9: 'BINARY_DATA', 10: 'TEXT', 11: 'LARGE_BINARY_DATA', 12: 'LARGE_TEXT', 13: 'SUPER_LARGE_VALUE', 14: 'INETEGER_32BIT_UNSIGNED', 15: 'INTEGER_64BIT_SIGNED', 16: 'GUID', 17: 'INTEGER_16BIT_UNSIGNED'}
+	rec = ese_table.get_record(ese_record_num)
+	col_type = rec.get_column_type(column_number)
+	col_data = rec.get_value_data(column_number)
+	#print "rec:%s  col:%s type:%s %s" % (ese_record_num, column_number, col_type, ese_column_types[col_type])
+	if col_type == pyesedb.column_types.BINARY_DATA:
+		col_data = "" if not col_data else col_data.encode("HEX")
+	elif col_type == pyesedb.column_types.BOOLEAN:
+		col_data = struct.unpack('?',col_data)[0]
+	elif col_type == pyesedb.column_types.CURRENCY:
+		pass
+	elif col_type == pyesedb.column_types.DATE_TIME:
+		pass
+	elif col_type == pyesedb.column_types.DOUBLE_64BIT:
+		col_data = 0 if not col_data else struct.unpack('d',col_data)[0]
+	elif col_type == pyesedb.column_types.FLOAT_32BIT:
+		col_data = 0.0 if not col_data else struct.unpack('f',col_data)[0]
+	elif col_type == pyesedb.column_types.GUID:
+		col_data = str(uuid.UUID(col_data.encode('hex')))    
+	elif col_type == pyesedb.column_types.INTEGER_16BIT_SIGNED:
+		col_data = 0 if not col_data else struct.unpack('h',col_data)[0]
+	elif col_type == pyesedb.column_types.INTEGER_16BIT_UNSIGNED:
+		col_data = 0 if not col_data else struct.unpack('H',col_data)[0]
+	elif col_type == pyesedb.column_types.INTEGER_32BIT_SIGNED:
+		col_data =  0 if not col_data else struct.unpack('i',col_data)[0]
+	elif col_type == pyesedb.column_types.INTEGER_32BIT_UNSIGNED:
+		col_data = 0 if not col_data else struct.unpack('I',col_data)[0]
+	elif col_type == pyesedb.column_types.INTEGER_64BIT_SIGNED:
+		col_data = 0 if not col_data else struct.unpack('q',col_data)[0]
+	elif col_type == pyesedb.column_types.INTEGER_8BIT_UNSIGNED:
+		col_data = 0 if not col_data else struct.unpack('B',col_data)[0]
+	elif col_type == pyesedb.column_types.LARGE_BINARY_DATA:
+		col_data = "" if not col_data else col_data.encode("HEX")
+	elif col_type == pyesedb.column_types.LARGE_TEXT:
+		col_data = blob_to_string(col_data)
+	elif col_type == pyesedb.column_types.NULL:
+		pass
+	elif col_type == pyesedb.column_types.SUPER_LARGE_VALUE:
+		col_data = "" if not col_data else col_data.encode("HEX")
+	elif col_type == pyesedb.column_types.TEXT:
+		col_data = blob_to_string(col_data)       
+	if col_data==None:
+		col_data = "Empty"
+	return col_data
+
 
 ads = (x for x in ["Mark Baggett and Don Williams wrote this program in 3 days. Coding in Python is easy.   Check out SANS Automating Infosec with Python SEC573 to learn to write your own forensics tools.",
        "To learn how SRUM and other artifacts can enhance your forensics investigations check out SANS Windows Forensics FOR408",
