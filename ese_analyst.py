@@ -9,6 +9,7 @@ import argparse
 import warnings
 import hashlib
 import random
+import uuid
 
 
 def BinarySIDtoStringSID(sid):
@@ -62,17 +63,25 @@ def ole_timestamp(binblob,timeformat="%Y-%m-%d %H:%M:%S"):
 
 def file_timestamp(binblob,timeformat="%Y-%m-%d %H:%M:%S"):
     #converts a hex encoded windows file time stamp to a time string
-    dt = datetime(1601,1,1,0,0,0) + timedelta(microseconds=binblob/10)
-    return  dt.strftime(timeformat)
+    try:
+        if type(binblob)==str:
+            binblob = int(binblob,16)
+        dt = datetime(1601,1,1,0,0,0) + timedelta(microseconds=binblob/10)
+        val = dt.strftime(timeformat)
+    except:
+        return binblob
+    return val
 
 def blob_to_string(binblob):
     try:
-        if re.match('^[ -~]+\x00?$', binblob.decode("utf-16-le")):
+        if re.match('^[ -~]+\x00?$', binblob.encode("ascii","ignore")):
+            binblob = binblob.encode("ascii","ignore").strip("\x00") 
+        elif re.match('^[ -~]+\x00?$', binblob.decode("utf-16-le")):
             binblob = binblob.decode("utf-16-le").strip("\x00")
         elif re.match('^[ -~]+\x00?$', binblob.decode("utf-16-be")):
             binblob = binblob.decode("utf-16-be").strip("\x00")
-        elif re.match('^[ -~]+\x00?$', binblob.encode("ascii","ignore")):
-            binblob = binblob.encode("ascii","ignore").strip("\x00")
+        else:
+            binblob = "" if not binblob else binblob.encode("HEX")
     except:
         binblob = "" if not binblob else binblob.encode("HEX")
     return binblob
@@ -82,21 +91,21 @@ def smart_retrieve(ese_table, ese_record_num, column_number):
     rec = ese_table.get_record(ese_record_num)
     col_type = rec.get_column_type(column_number)
     col_data = rec.get_value_data(column_number)
-    #print "rec:%s  col:%s type:%s %s" % (ese_record_num, column_number, col_type, ese_column_types[col_type])
+    #print "rec:%s  col:%s type:%s %s Value:%s" % (ese_record_num, column_number, col_type, ese_column_types[col_type], col_data)
     if col_type == pyesedb.column_types.BINARY_DATA:
         col_data = "" if not col_data else col_data.encode("HEX")
     elif col_type == pyesedb.column_types.BOOLEAN:
-        col_data = struct.unpack('?',col_data)[0]
+        col_data = "" if not col_data else struct.unpack('?',col_data)[0]
     elif col_type == pyesedb.column_types.CURRENCY:
         pass
     elif col_type == pyesedb.column_types.DATE_TIME:
-        col_data = ole_timestamp(col_data)
+        col_data = "" if not col_data else ole_timestamp(col_data)
     elif col_type == pyesedb.column_types.DOUBLE_64BIT:
         col_data = 0 if not col_data else struct.unpack('d',col_data)[0]
     elif col_type == pyesedb.column_types.FLOAT_32BIT:
         col_data = 0.0 if not col_data else struct.unpack('f',col_data)[0]
     elif col_type == pyesedb.column_types.GUID:
-        col_data = str(uuid.UUID(col_data.encode('hex')))    
+        col_data = "" if not col_data else str(uuid.UUID(col_data.encode('hex')))    
     elif col_type == pyesedb.column_types.INTEGER_16BIT_SIGNED:
         col_data = 0 if not col_data else struct.unpack('h',col_data)[0]
     elif col_type == pyesedb.column_types.INTEGER_16BIT_UNSIGNED:
@@ -153,15 +162,18 @@ def output_formatting(val, eachformat):
         val =  "WARNING: I'm not sure what to do with the format command %s.  It was ignored." % (eachformat)
     return val
 
-
-
-ads = (x for x in ["Mark Baggett and Don Williams wrote this program in 3 days. Coding in Python is easy.   Check out SANS Automating Infosec with Python SEC573 to learn to write your own forensics tools.",
+def rotating_list(somelist):
+    while True:
+       for x in somelist:
+           yield x
+          
+ads = rotating_list(["Mark Baggett and Don Williams wrote this program in 3 days. Coding in Python is easy.   Check out SANS Automating Infosec with Python SEC573 to learn to write program like this on your own.",
        "To learn how SRUM and other artifacts can enhance your forensics investigations check out SANS Windows Forensics FOR408",
-       "This program uses the function BinarySIDtoStringSID from the GRR code base to convert binary data into a user SID and relies heavily on the libpyese module. This works because of them.  Check them out!",
+       "This program uses the function BinarySIDtoStringSID from the GRR code base to convert binary data into a user SID and relies heavily on the libesedb-python module. This works because of them.  Check them out!",
        "Yogesh Khatri's paper at https://files.sans.org/summit/Digital_Forensics_and_Incident_Response_Summit_2015/PDFs/Windows8SRUMForensicsYogeshKhatri.pdf was essential in the creation of this tool.",
        "By modifying the template file you have control of what ends up in the analyzed results.  Try creating an alternate template and passing it with the --XLSX_TEMPLATE option.",
        "This program was written by Twitter:@markbaggett and @donaldjwilliam5 because @ovie said so.",
-       "You could analyze other ESE format databases with this by creating a new template.  The program ese_template will get you started genereating templates.",
+       "You could analyze other ESE format databases with ese_analyst.  https://github.com/MarkBaggett/ese-analyst",
        ])
 
 parser = argparse.ArgumentParser(description="Given an ESE database it will create an XLS spreadsheet with analysis of the data in the database.")
@@ -196,6 +208,7 @@ except Exception as e:
 target_wb = openpyxl.Workbook()
 sheets = template_wb.get_sheet_names()
 for each_sheet in sheets:
+    print "\n\nReading Template sheet "+each_sheet
     #open the first sheet in the template
     template_sheet = template_wb.get_sheet_by_name(each_sheet)
     #retieve the name of the ESE table to populate the sheet with from A1
@@ -213,6 +226,7 @@ for each_sheet in sheets:
         ese_template_formats.append(format_cmd)
         ese_template_styles.append(field_style)
         ese_template_fields.append(field_name.strip())
+
     #Now open the specified table in the ESE database for this sheet
     try:
         ese_table = ese_db.get_table_by_name(ese_template_table)
@@ -220,16 +234,13 @@ for each_sheet in sheets:
         print "Unable to find table",ese_template_table
         print "Error: "+str(e)
         continue
+
     #Now create the worksheet in the new xls file with the same name as the template
     print "\n\nCreating Sheet "+each_sheet
 
     if not options.quiet:
-        print "Processing %s records." % (ese_table.number_of_records), 
-        try:
-            ad = ads.next()
-        except:
-            ad = "Thanks for using srum_dump!"
-        print "While you wait, did you know ...\n"+ad
+        print "Processing %s records with %s fields." % (ese_table.number_of_records,ese_table.number_of_columns), 
+        print "While you wait, did you know ...\n"+ads.next()
 
     xls_sheet = target_wb.create_sheet(title=each_sheet)
     #Now copy the header values and header formats from the template to the new worksheet
@@ -241,10 +252,13 @@ for each_sheet in sheets:
         new_cell.style = cell_style
         header_row.append(new_cell)
     xls_sheet.append(header_row)
+
     #Create a dictionary to lookup column numbers based on a column name
     column_lookup = dict([(x.name,index) for index,x in enumerate(ese_table.columns)])
     #For each row in the ESE database
     for ese_row_num in range(ese_table.number_of_records):
+        if ese_table.name == "GiveMeAName110":
+            import pdb;pdb.set_trace()
         xls_row = []
         #For each column in our template spreadsheet
         for eachcolumn,eachformat,eachstyle in zip(ese_template_fields,ese_template_formats,ese_template_styles):
@@ -258,7 +272,9 @@ for each_sheet in sheets:
                 #print dir(new_cell.style.font)
                 xls_row.append(new_cell)
         xls_sheet.append(xls_row)
-        if ese_row_num % (ese_table.number_of_records/10) == 0:
+        if (not options.quiet) and \
+          (ese_table.number_of_records > 100) and \
+          ((ese_row_num % (ese_table.number_of_records/10)) == 0 ):
             print "%2.0f%%" % (ese_row_num / float(ese_table.number_of_records) * 100),
             sys.stdout.flush()
 firstsheet=target_wb.get_sheet_by_name("Sheet")
