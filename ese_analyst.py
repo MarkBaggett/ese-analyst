@@ -1,5 +1,5 @@
 import pyesedb
-from datetime import datetime,timedelta
+import datetime as dtm
 import sys
 import struct
 import re
@@ -58,7 +58,7 @@ def BinarySIDtoStringSID(sid):
 def ole_timestamp(binblob,timeformat="%Y-%m-%d %H:%M:%S"):
     #converts a hex encoded OLE time stamp to a time string
     ts = struct.unpack("<d",binblob)[0]
-    dt = datetime(1899,12,30,0,0,0) + timedelta(days=ts)
+    dt = dtm.datetime(1899,12,30,0,0,0) + dtm.timedelta(days=ts)
     return  dt.strftime(timeformat)
 
 def file_timestamp(binblob,timeformat="%Y-%m-%d %H:%M:%S"):
@@ -66,7 +66,7 @@ def file_timestamp(binblob,timeformat="%Y-%m-%d %H:%M:%S"):
     try:
         if type(binblob)==str:
             binblob = int(binblob,16)
-        dt = datetime(1601,1,1,0,0,0) + timedelta(microseconds=binblob/10)
+        dt = dtm.datetime(1601,1,1,0,0,0) + dtm.timedelta(microseconds=binblob/10)
         val = dt.strftime(timeformat)
     except:
         return binblob

@@ -19,7 +19,7 @@ if not options.xlsoutfile:
 def ole_timestamp(binblob,timeformat="%Y-%m-%d %H:%M:%S"):
     #converts a hex encoded OLE time stamp to a time string
     ts = struct.unpack("<d",binblob)[0]
-    dt = datetime(1899,12,30,0,0,0) + timedelta(days=ts)
+    dt = datetime.datetime(1899,12,30,0,0,0) + datetime.timedelta(days=ts)
     return  dt.strftime(timeformat)
 
 def blob_to_string(binblob):
