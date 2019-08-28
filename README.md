@@ -29,10 +29,10 @@ optional arguments:
 Without creating a plugin you can list tables (-l) in an ESE and dump them (-d).  BUT when you make a plugin (-m) you can define functions, rename fields, rename tables, and more.
 
 
-#List the tables in an ese
+# List the tables in an ese
 
 ```
-C:\Users\Win10Lab\Desktop>dist\ese2csv.exe -l C:\Windows\SoftwareDistribution\DataStore\DataStore.edb
+C:>ese2csv.exe -l C:\Windows\SoftwareDistribution\DataStore\DataStore.edb
 C:\Windows\SoftwareDistribution\DataStore\DataStore.edb True
 Table MSysObjects has 479 records
 Table MSysObjectsShadow has 479 records
@@ -64,21 +64,21 @@ Table tbPerSrvUpdate7c8a5e85b4eca34cb0451dfa50104289 has 713 records
 Table tbPerSrvUserUpdateData7c8a5e85b4eca34cb0451dfa50104289 has 0 records
 ```
 
-#Dump the dbTimers table without a plugin
+# Dump the dbTimers table without a plugin
 
 ```
-C:\Users\Win10Lab\Desktop>dist\ese2csv.exe -d tbTimers -- C:\Windows\SoftwareDistribution\DataStore\DataStore.edb
+C:>ese2csv.exe -d tbTimers -- C:\Windows\SoftwareDistribution\DataStore\DataStore.edb
 C:\Windows\SoftwareDistribution\DataStore\DataStore.edb True
 Processing tbTimers
 
-C:\Users\Win10Lab\Desktop>type tbTimers.csv
+C:>type tbTimers.csv
 TimerId,ExpirationTime,IdleOnly,NetworkOnly
 b'e763a82909861e4db7cd5668f857f1db',b'eaaadd49c85dd501',0,0
 ```
-#list the dables in a SRUM database
+# list the dables in a SRUM database
 
 ```
-C:\Users\Win10Lab\Desktop>dist\ese2csv.exe -l srudb.dat
+C:> ese2csv.exe -l srudb.dat
 srudb.dat True
 Table MSysObjects has 262 records
 Table MSysObjectsShadow has 262 records
@@ -100,12 +100,12 @@ Table {B6D82AF1-F780-4E17-8077-6CB9AD8A6FC4} has 98 records
 
 # Make a srum plugin (which requires editing)
 ```
-C:\Users\Win10Lab\Desktop>ese2csv.exe -m srudb.dat > srudb_plugin.py
+C:>ese2csv.exe -m srudb.dat > srudb_plugin.py
 ```
 
-#After editing the plugin use it to list new friendly table names
+# After editing the plugin use it to list new friendly table names
 ```
-C:\Users\Win10Lab\Desktop>ese2csv.exe -p srudb_plugin -l srudb.dat
+C:>ese2csv.exe -p srudb_plugin -l srudb.dat
 srudb.dat True
 Table MSysObjects aka MSysObjects has 262 records
 Table MSysObjectsShadow aka MSysObjectsShadow has 262 records
@@ -124,10 +124,10 @@ Table {5C8CF1C7-7257-4F13-B223-970EF5939312} aka Unknown1 has 16982 records
 Table {7ACBBAA3-D029-4BE4-9A7A-0885927F1D8F} aka Unknown2 has 1544 records
 Table {B6D82AF1-F780-4E17-8077-6CB9AD8A6FC4} aka Unknown3 has 98 records
 ```
-#And dump a table based on its friendly name
+# And dump a table based on its friendly name
 
 ```
-C:\Users\Win10Lab\Desktop>ese2csv.exe -p srudb_config -d "Network Usage" -- srudb.dat
+C:>ese2csv.exe -p srudb_config -d "Network Usage" -- srudb.dat
 srudb.dat True
 Processing Network Usage
 ```
