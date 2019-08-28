@@ -9,6 +9,9 @@ import pathlib
 import importlib
 import re
 import sys
+import tempfile
+import urllib.request
+import subprocess
 from datetime import datetime,timedelta
 
 def blob_to_string(chrblob):
@@ -67,7 +70,7 @@ def smart_retrieve(ese_table, ese_record_num, column_number):
     elif col_type == pyesedb.column_types.FLOAT_32BIT:
         col_data = 0.0 if not col_data else struct.unpack('f',col_data)[0]
     elif col_type == pyesedb.column_types.GUID:
-        col_data = str(uuid.UUID(col_data.encode('hex')))    
+        col_data = str(uuid.UUID(bytes = col_data))    
     elif col_type == pyesedb.column_types.INTEGER_16BIT_SIGNED:
         col_data = 0 if not col_data else struct.unpack('h',col_data)[0]
     elif col_type == pyesedb.column_types.INTEGER_16BIT_UNSIGNED:
@@ -167,6 +170,34 @@ def get_app_id(data):
 def lookup(table, value):
     return yaml_config.get("lookups",{}).get(table, {}).get(value)
 
+def extract_live_file(live_path):
+    if not live_path.exists():
+        print(f"The file specified for live aquisition was not found. {str(live_path)}")
+        sys.exit(1)
+    try:
+        fget_file = tempfile.NamedTemporaryFile(mode="w+b", suffix=".exe",delete=False)
+        extracted_file = tempfile.NamedTemporaryFile(mode="w+b", suffix = ".dat", delete=False)
+        #print("Downloading fget.exe to {}".format(fget_file.name))
+        try:
+            fget_binary = urllib.request.urlopen('https://github.com/MarkBaggett/srum-dump/raw/master/FGET.exe').read()
+        except Exception as e:
+            raise(Exception(f"Unable to download FGET {str(e)}"))
+        fget_file.write(fget_binary)
+        fget_file.close()
+        cmdline = r'{} -extract "{}" {}'.format(fget_file.name, str(live_path), extracted_file.name)
+        #print(cmdline)
+        phandle = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out1,_ = phandle.communicate()
+        pathlib.Path(fget_file.name).unlink()
+    except Exception as e:
+        print("Unable to automatically extract file. {}".format(str(e)))
+        return None
+    if b"SUCCESS" in out1:
+        return pathlib.Path(extracted_file.name)
+    else:
+        print("ERROR running FGET.EXE: {}".format(out1))
+        sys.exit(1)
+
 def create_csv(database, table_name, yaml= {}):
     friendly_table_name = yaml.get('tables',{}).get(table_name,{}).get("name",table_name)
     dest_file = pathlib.Path.cwd() / (friendly_table_name+".csv")
@@ -216,50 +247,73 @@ def load_yaml(ese_db, plugin):
             raise(e)
     return yaml_config     
 
-parser = argparse.ArgumentParser(description="do stuff")
+parser = argparse.ArgumentParser(description="Find and dump ESE databases.")
 parser.add_argument("--make-plugin", "-m", dest="makeconfig", help="Produce an editable shell of a plugin for the specified ese.",action="store_true")
 parser.add_argument("--pluggin", "-p", dest="config", help="Use a plugin that defines fields in the ese database.")
+parser.add_argument("--acquire-live", "-a", dest="acquire", help="Use FGET to extract locked file for processing.",action="store_true")
 parser.add_argument("--list-tables", "-l", dest="listtables", help="List all tables in the ese.",action="store_true")
+parser.add_argument("--recurse", "-r", dest="recurse", help="Recurse subdirectories to find ese in path.",action="store_true")
 parser.add_argument("--dump-tables", "-d", dest="dumptables", help="Only dump tables listed separated by space. End the list with --.",nargs = "*")
 parser.add_argument("ese_file", help = "This required file name is an ese database")
 args = parser.parse_args()
 
-edb_path = pathlib.Path(args.ese_file)
-print(str(edb_path), edb_path.exists())
-ese_db = pyesedb.file()
-ese_db.open(str(edb_path))
 
-yaml_config = {}
-if args.config:
-    sys.path.append(str(pathlib.Path.cwd()))
-    plugin = importlib.import_module(args.config)
-    plugin.smart_retrieve = smart_retrieve
-    plugin.blob_to_string = blob_to_string
-    plugin.lookup = lookup
-    plugin.ole_timestatmp = ole_timestamp
-    plugin.file_timestamp = file_timestamp
-    yaml_config = load_yaml(ese_db, plugin)
-
-if args.makeconfig:
-    ese_config = make_config(ese_db)
-    print(ese_config)
-elif args.listtables:
-    for eachtable in ese_db.tables:
-        if not yaml_config:
-            try:
-                print(f"Table {eachtable.name} has {eachtable.number_of_records} records")
-            except Exception as e:
-                print(f"Table {eachtable.name} {str(e)}")
-        else:
-            friendly_name = yaml_config.get('tables',{}).get(eachtable.name,{}).get("name",eachtable.name)
-            try:
-                print(f"Table {eachtable.name} aka {friendly_name} has {eachtable.number_of_records} records") 
-            except Exception as e:
-                print(f"Table {eachtable.name} aka {friendly_name} {str(e)}") 
+edb_list = pathlib.Path(args.ese_file)
+if args.recurse:
+    edb_list = edb_list.parent.rglob(edb_list.name)
 else:
-    for eachtable in ese_db.tables:
-        friendly_name = yaml_config.get('tables',{}).get(eachtable.name,{}).get("name",eachtable.name)
-        if args.dumptables and (eachtable.name not in args.dumptables) and (friendly_name not in args.dumptables):
+    edb_list = edb_list.parent.glob(edb_list.name)
+
+for edb_path in  edb_list:
+    edb_path_original = str(edb_path)
+    if args.acquire:
+        edb_path = extract_live_file(edb_path)
+
+    yaml_config = {}
+    if args.config:
+        sys.path.append(str(pathlib.Path.cwd()))
+        plugin = importlib.import_module(args.config)
+        plugin.smart_retrieve = smart_retrieve
+        plugin.blob_to_string = blob_to_string
+        plugin.lookup = lookup
+        plugin.ole_timestatmp = ole_timestamp
+        plugin.file_timestamp = file_timestamp
+        yaml_config = load_yaml(ese_db, plugin)
+
+    ese_db = pyesedb.file()
+    try:
+        ese_db.open(str(edb_path))
+    except Exception as e:
+        print(f"Unable to open ESE. Perhaps it is locked (try -a) or it is not an ese. \n\n {str(e)}\n")
+        if args.acquire:
+            edb_path.unlink()
             continue
-        create_csv(ese_db, eachtable.name, yaml_config )
+
+    if args.makeconfig:
+        ese_config = make_config(ese_db)
+    elif args.listtables:
+        print(f"TABLE LISTING FOR ESE FILE {str(edb_path_original)}\n")
+        for eachtable in ese_db.tables:
+            if not yaml_config:
+                try:
+                    print(f"Table {eachtable.name} has {eachtable.number_of_records} records")
+                except Exception as e:
+                    print(f"Table {eachtable.name} {str(e)}")
+            else:
+                friendly_name = yaml_config.get('tables',{}).get(eachtable.name,{}).get("name",eachtable.name)
+                try:
+                    print(f"Table {eachtable.name} aka {friendly_name} has {eachtable.number_of_records} records") 
+                except Exception as e:
+                    print(f"Table {eachtable.name} aka {friendly_name}")
+        print(f"\nDone listing {str(edb_path_original)}\n")
+    else:
+        for eachtable in ese_db.tables:
+            friendly_name = yaml_config.get('tables',{}).get(eachtable.name,{}).get("name",eachtable.name)
+            if args.dumptables and (eachtable.name not in args.dumptables) and (friendly_name not in args.dumptables):
+                continue
+            create_csv(ese_db, eachtable.name, yaml_config )
+
+    ese_db.close()
+    if args.acquire:
+        edb_path.unlink()
         
