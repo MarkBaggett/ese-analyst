@@ -29,7 +29,14 @@ optional arguments:
 
 ```
 
-The idea of ese2csv is to allow you to dump the data from any ESE database that the libesedb engine can read. However, you can also create a "plugin" for the ese file with the -m option that allows you to use YAML to define the formats for fields, gives them friendly names and provides functions for processing the database. The tool supports wildcards and directory recursion so you can search your drive and let the tool extract what ever it can find.
+The idea of ese2csv is to allow you to dump the data from any ESE database that the libesedb engine can read. However, you can also create a "plugin" for the ese file with the -m option that allows you to use YAML to define the formats for fields, gives them friendly names and provides functions for processing the database. The tool is distributed with one plugin.  The srudb_plugin.py can be used to dump the srum database.  The tool supports wildcards and directory recursion so you can search your drive and let the tool extract what ever it can find.
+
+# Dump all the tables in the the srudb.dat file to a csv_files. Acquire a copy of the locked file before use.
+
+```
+C:>ese2csv.exe -p srum_plugin -a C:\Windows\System32\sru\srudb.dat
+
+```
 
 
 # List the tables in an ese database.  File must not be locked by the OS. If it is use -a (acquire).
