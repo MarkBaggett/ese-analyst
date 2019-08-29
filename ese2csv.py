@@ -12,6 +12,7 @@ import sys
 import tempfile
 import urllib.request
 import subprocess
+from Registry.Registry import Registry
 from datetime import datetime,timedelta
 
 def blob_to_string(chrblob):
@@ -129,6 +130,34 @@ def make_config(database):
 import struct
 import codecs
 
+
+
+def plugin_init(ese_database):
+    #table_names = " ".join([x.name for x in ese_database.tables])
+    #print("Received Arguments", args)
+    #print("Plugin Initialized for ", table_names)
+    # Setup any data structures required for yaml function calls
+    return None
+
+def plugin_modify_header(list_of_headers, table_name):
+    #print("Plugin Processing headers", list_of_headers)
+    # Modify headers as needed before commit to file
+    return list_of_headers
+
+#sample_total = 0
+def plugin_modify_row(list_of_row_values, table_name):
+    #global sample_total
+    #print("Plugin Processing Row", list_of_row_values)
+    #if table_name == "some target":
+    #    sample_total += list_of_row_values[10] 
+    # Modify list as needed before commit to file or keep totals
+    return list_of_row_values
+
+def plugin_end_of_file(csv_writer_object, table_name):
+    #print("Plugin Finished file" )
+    # Write header footers, calculations etc
+    return None
+
 def BinarySIDtoStringSID(sid_str):
     if not sid_str:
         return ""
@@ -200,6 +229,10 @@ def extract_live_file(live_path):
 
 def create_csv(database, table_name, yaml= {}):
     friendly_table_name = yaml.get('tables',{}).get(table_name,{}).get("name",table_name)
+    ignore_table = yaml.get('tables',{}).get(table_name,{}).get("ignore","no") == "yes"
+    if ignore_table:
+        print(f"Table {friendly_table_name} ignored because of YAML setting.")
+        return
     dest_file = pathlib.Path.cwd() / (friendly_table_name+".csv")
     with dest_file.open("w", newline = "") as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -208,7 +241,12 @@ def create_csv(database, table_name, yaml= {}):
         header_row = []
         for each_field in ese_table.columns:
             name = yaml.get('tables',{}).get(table_name,{}).get("fields",{}).get(each_field.name,{}).get('name',each_field.name)
+            ignore_field = yaml.get('tables',{}).get(table_name,{}).get("fields",{}).get(each_field.name,{}).get('ignore','no') == "yes"
+            if ignore_field:
+                continue
             header_row.append(name)
+        if yaml_config and hasattr(plugin,"plugin_modify_header"):
+            header_row = plugin.plugin_modify_header(header_row,table_name)
         csv_writer.writerow(header_row)
         for rec_entry_num in range(ese_table.number_of_records):
             data_row = []
@@ -216,6 +254,9 @@ def create_csv(database, table_name, yaml= {}):
                 field_name = ese_table.columns[each_field].name
                 data = smart_retrieve(ese_table,rec_entry_num, each_field)
                 if yaml_config:
+                    ignore_field = yaml.get('tables',{}).get(table_name,{}).get("fields",{}).get(field_name,{}).get('ignore','no') == "yes"
+                    if ignore_field:
+                        continue
                     data_format = yaml.get('tables',{}).get(table_name,{}).get("fields",{}).get(field_name,{}).get('format')
                     if data_format.startswith("function:"):
                         func_call = data_format.split(":")[1]
@@ -223,7 +264,12 @@ def create_csv(database, table_name, yaml= {}):
                     elif data_format.startswith("lookup:"):
                         data = lookup(data_format.split(":")[1],data)     
                 data_row.append(data)
+            if yaml_config and hasattr(plugin,"plugin_modify_row"):
+                data_row = plugin.plugin_modify_row(data_row, table_name)
             csv_writer.writerow(data_row)
+        if yaml_config and hasattr(plugin,"plugin_end_of_file"):
+                plugin.plugin_end_of_file(csv_writer, table_name)
+
 
 def load_yaml(ese_db, plugin):
     yaml_config = yaml.safe_load(plugin.yaml_config)
@@ -253,7 +299,8 @@ parser.add_argument("--pluggin", "-p", dest="config", help="Use a plugin that de
 parser.add_argument("--acquire-live", "-a", dest="acquire", help="Use FGET to extract locked file for processing.",action="store_true")
 parser.add_argument("--list-tables", "-l", dest="listtables", help="List all tables in the ese.",action="store_true")
 parser.add_argument("--recurse", "-r", dest="recurse", help="Recurse subdirectories to find ese in path.",action="store_true")
-parser.add_argument("--dump-tables", "-d", dest="dumptables", help="Only dump tables listed separated by space. End the list with --.",nargs = "*")
+parser.add_argument("--dump-tables", "-d", dest="dumptables", help="Only dump tables listed here separated by spaces. End this list with double dash if this is not followed by additional optional arguments. --.",nargs = "*")
+parser.add_argument("--plugin-args", dest="pluginargs", default = [], help="Arguments passed to plugin. End arguments with double dash if this is not followed by additional optional arguments. --.",nargs = "*")
 parser.add_argument("ese_file", help = "This required file name is an ese database")
 args = parser.parse_args()
 
@@ -264,21 +311,10 @@ if args.recurse:
 else:
     edb_list = edb_list.parent.glob(edb_list.name)
 
-for edb_path in  edb_list:
+for edb_path in edb_list:
     edb_path_original = str(edb_path)
     if args.acquire:
         edb_path = extract_live_file(edb_path)
-
-    yaml_config = {}
-    if args.config:
-        sys.path.append(str(pathlib.Path.cwd()))
-        plugin = importlib.import_module(args.config)
-        plugin.smart_retrieve = smart_retrieve
-        plugin.blob_to_string = blob_to_string
-        plugin.lookup = lookup
-        plugin.ole_timestatmp = ole_timestamp
-        plugin.file_timestamp = file_timestamp
-        yaml_config = load_yaml(ese_db, plugin)
 
     ese_db = pyesedb.file()
     try:
@@ -289,8 +325,29 @@ for edb_path in  edb_list:
             edb_path.unlink()
             continue
 
+    yaml_config = {}
+    if args.config:
+        if getattr(sys, 'frozen', False):
+            program_dir = pathlib.Path(sys.executable)
+        elif __file__:
+            program_dir = pathlib.Path(__file__)
+        sys.path.append(str(program_dir.resolve().parent))
+        sys.path.append(str(pathlib.Path.cwd()))
+        plugin = importlib.import_module(args.config)
+        plugin.smart_retrieve = smart_retrieve
+        plugin.blob_to_string = blob_to_string
+        plugin.lookup = lookup
+        plugin.ole_timestatmp = ole_timestamp
+        plugin.file_timestamp = file_timestamp
+        plugin.extract_live_file = extract_live_file
+        plugin.args = args.pluginargs
+        yaml_config = load_yaml(ese_db, plugin)
+        if hasattr(plugin,"plugin_init"):
+            plugin.plugin_init(ese_db)
+
     if args.makeconfig:
         ese_config = make_config(ese_db)
+        print(ese_config)
     elif args.listtables:
         print(f"TABLE LISTING FOR ESE FILE {str(edb_path_original)}\n")
         for eachtable in ese_db.tables:

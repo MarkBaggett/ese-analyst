@@ -516,7 +516,7 @@ tables:
         format: None
         friendly name: SeqNumber
         ignore: 'no'
-    ignore: 'no'
+    ignore: 'yes'
     name: SruDbCheckpointTable
   SruDbIdMapTable:
     fields:
@@ -532,7 +532,7 @@ tables:
         format: None
         friendly name: IdType
         ignore: 'no'
-    ignore: 'no'
+    ignore: 'yes'
     name: SruDbIdMapTable
   '{5C8CF1C7-7257-4F13-B223-970EF5939312}':
     fields:
@@ -777,7 +777,7 @@ tables:
         friendly name: L2ProfileFlags
         ignore: 'no'
       L2ProfileId:
-        format: None
+        format: function:lookup_wireless
         friendly name: L2ProfileId
         ignore: 'no'
       TimeStamp:
@@ -985,7 +985,7 @@ tables:
         friendly name: L2ProfileFlags
         ignore: 'no'
       L2ProfileId:
-        format: None
+        format: function:lookup_wireless
         friendly name: L2ProfileId
         ignore: 'no'
       TimeStamp:
@@ -1119,6 +1119,63 @@ tables:
 """
 import struct
 import codecs
+import pathlib
+import sys
+from Registry.Registry import Registry
+
+def load_interfaces(reg_file):
+    try:
+        reg_handle = Registry(reg_file)
+    except Exception as e:
+        print("I could not open the specified SOFTWARE registry key. It is usually located in \Windows\system32\config but is locked by the OS.")
+        print("Error : ", str(e))
+        sys.exit(1)
+    int_keys = reg_handle.open('Microsoft\\WlanSvc\\Interfaces')
+    profile_lookup = {}
+    for eachinterface in int_keys.subkeys():
+        if len(eachinterface.subkeys())==0:
+            continue
+        for eachprofile in eachinterface.subkey("Profiles").subkeys():
+            profileid = [x.value() for x in eachprofile.values() if x.name()=="ProfileIndex"][0]
+            metadata = eachprofile.subkey("MetaData").values()
+            for eachvalue in metadata:
+                if eachvalue.name()=="Channel Hints":
+                    channelhintraw = eachvalue.value()
+                    hintlength = struct.unpack("I", channelhintraw[0:4])[0]
+                    name = channelhintraw[4:hintlength+4] 
+                    profile_lookup[str(profileid)] = name
+    return profile_lookup
+
+wireless_lookup = {}
+def lookup_wireless(wireless_id):
+    return wireless_lookup.get(str(wireless_id),"")
+
+def plugin_init(ese_database):
+    global wireless_lookup
+    #table_names = " ".join([x.name for x in ese_database.tables])
+    #print("Received Arguments", args)
+    if args and pathlib.Path(args[0]).exists():
+        wireless_lookup = load_interfaces(args[0])
+    elif args:
+        print(f"Registry file {str(args[0])} not found.")
+    #print("Plugin Initialized for ", table_names)
+    # Setup any data structures required for yaml function calls
+    return None
+
+def plugin_modify_header(list_of_headers, table_name):
+    #print("Plugin Processing headers", list_of_headers)
+    # Modify headers as needed before commit to file
+    return list_of_headers
+
+def plugin_modify_row(list_of_row_values, table_name):
+    #print("Plugin Processing Row", list_of_row_values)
+    # Modify list as needed before commit to file or keep totals
+    return list_of_row_values
+
+def plugin_end_of_file(csv_writer_object, table_name):
+    #print("Plugin Finished file" )
+    # Write header footers, calculations etc
+    return None
 
 def BinarySIDtoStringSID(sid_str):
     if not sid_str:

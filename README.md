@@ -4,10 +4,11 @@ The tool ese2csv is intended to make analyzing and dumping any ese file simple. 
 
 ```
 C:\>ese2csv.exe --help
-usage: ese2csv.py [-h] [--make-plugin] [--pluggin CONFIG] [--acquire-live]
-                  [--list-tables] [--recurse]
-                  [--dump-tables [DUMPTABLES [DUMPTABLES ...]]]
-                  ese_file
+usage: ese2csv.exe [-h] [--make-plugin] [--pluggin CONFIG] [--acquire-live]
+                   [--list-tables] [--recurse]
+                   [--dump-tables [DUMPTABLES [DUMPTABLES ...]]]
+                   [--plugin-args [PLUGINARGS [PLUGINARGS ...]]]
+                   ese_file
 
 Find and dump ESE databases.
 
@@ -24,22 +25,26 @@ optional arguments:
   --list-tables, -l     List all tables in the ese.
   --recurse, -r         Recurse subdirectories to find ese in path.
   --dump-tables [DUMPTABLES [DUMPTABLES ...]], -d [DUMPTABLES [DUMPTABLES ...]]
-                        Only dump tables listed separated by space. End the
-                        list with --.
+                        Only dump tables listed here separated by spaces. End
+                        this list with double dash if this is not followed by
+                        additional optional arguments. --.
+  --plugin-args [PLUGINARGS [PLUGINARGS ...]]
+                        Arguments passed to plugin. End arguments with double
+                        dash if this is not followed by additional optional
+                        arguments. --.
 
 ```
 
 The idea of ese2csv is to allow you to dump the data from any ESE database that the libesedb engine can read. However, you can also create a "plugin" for the ese file with the -m option that allows you to use YAML to define the formats for fields, gives them friendly names and provides functions for processing the database. The tool is distributed with one plugin.  The srudb_plugin.py can be used to dump the srum database.  The tool supports wildcards and directory recursion so you can search your drive and let the tool extract what ever it can find.
 
-# Dump all the tables in the the srudb.dat file to a csv_files. Acquire a copy of the locked file before use.
+# Dump all the tables in the the srudb.dat file to a csv_files except those ignored by the YAML in the srum_plugin.py. Acquire a copy of the locked srudb.dat file before use. Pass a copy of the already unlocked SOFTWARE registry hive as a plugin argument.
 
 ```
-C:>ese2csv.exe -p srum_plugin -a C:\Windows\System32\sru\srudb.dat
+C:>ese2csv.exe -p srum_plugin -a --plugin-args SOFTWARE C:\Windows\System32\sru\srudb.dat
 
 ```
 
-
-# List the tables in an ese database.  File must not be locked by the OS. If it is use -a (acquire).
+# List the tables (-l) in an ese database.  File must not be locked by the OS. If it is use -a (acquire).
 
 ```
 C:>ese2csv.exe -l C:\Windows\SoftwareDistribution\DataStore\DataStore.edb
@@ -74,7 +79,7 @@ Table tbPerSrvUpdate7c8a5e85b4eca34cb0451dfa50104289 has 713 records
 Table tbPerSrvUserUpdateData7c8a5e85b4eca34cb0451dfa50104289 has 0 records
 ```
 
-# Find all *.edb files in c:\ and list their table contents -r (recurse) -a (acquire live files) -l (list tables)
+# Find all *.edb files in c:\ and list their table contents. -r (recurse) all subdirectories and -a (acquire live files) any locked files with FGET before you -l (list tables) list the tables.
 
 ```
 C:\> ese2csv.exe -ral "C:\*.edb"
