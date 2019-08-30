@@ -1,4 +1,5 @@
-yaml_config = r"""lookups:
+yaml_config = r"""
+lookups:
   LUID_interface_types:
     1: IF_TYPE_OTHER
     10: IF_TYPE_ISO88026_MAN
@@ -516,7 +517,7 @@ tables:
         format: None
         friendly name: SeqNumber
         ignore: 'no'
-    ignore: 'yes'
+    ignore: 'no'
     name: SruDbCheckpointTable
   SruDbIdMapTable:
     fields:
@@ -532,7 +533,7 @@ tables:
         format: None
         friendly name: IdType
         ignore: 'no'
-    ignore: 'yes'
+    ignore: 'no'
     name: SruDbIdMapTable
   '{5C8CF1C7-7257-4F13-B223-970EF5939312}':
     fields:
@@ -1154,7 +1155,14 @@ def plugin_init(ese_database):
     global wireless_lookup
     #table_names = " ".join([x.name for x in ese_database.tables])
     #print("Received Arguments", args)
-    if args and pathlib.Path(args[0]).exists():
+    if args and args[0].lower() == "live":
+        live_path = pathlib.Path("c:\\Windows\\System32\\Config\\SOFTWARE")
+        if live_path.exists():
+            regpath = extract_live_file(live_path)
+            wireless_lookup = load_interfaces(str(regpath))
+        else:
+            print("Unable to find the SOFTWARE registry on this system.")
+    elif args and pathlib.Path(args[0]).exists():
         wireless_lookup = load_interfaces(args[0])
     elif args:
         print(f"Registry file {str(args[0])} not found.")
