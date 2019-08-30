@@ -239,7 +239,7 @@ def create_csv(database, table_name, yaml= {}):
             print(f"Table {friendly_table_name} ignored because of YAML setting.")
             return
     fcount = 1
-    dest_file = pathlib.Path.cwd() / (friendly_table_name+".csv")
+    dest_file = pathlib.Path(args.outpath) / (friendly_table_name+".csv")
     while dest_file.exists():
         dest_file = pathlib.Path.cwd() / (friendly_table_name+f"({fcount}).csv")
         fcount += 1
@@ -309,6 +309,7 @@ def load_yaml_table_refs(ese_db, plugin):
 parser = argparse.ArgumentParser(description="Find and dump ESE databases.")
 parser.add_argument("--make-plugin", "-m", dest="makeconfig", help="Produce an editable shell of a plugin for the specified ese.",action="store_true")
 parser.add_argument("--pluggin", "-p", dest="config", help="Use a plugin that defines fields in the ese database.")
+parser.add_argument("--outpath", "-o", dest="outpath", default = str(pathlib.Path.cwd()), help="The directory to which the CSV(s) will be written.")
 parser.add_argument("--acquire-live", "-a", dest="acquire", help="Use FGET to extract locked file for processing.",action="store_true")
 parser.add_argument("--verbose", "-v", dest="verbose", help="Generate Verbose output for debugging.",action="store_true")
 parser.add_argument("--list-tables", "-l", dest="listtables", help="List all tables in the ese.",action="store_true")
@@ -318,6 +319,9 @@ parser.add_argument("--plugin-args", dest="pluginargs", default = [], help="Argu
 parser.add_argument("ese_file", help = "This required file name is an ese database")
 args = parser.parse_args()
 
+if args.outpath and not (pathlib.Path(args.outpath).exists() and pathlib.Path(args.outpath).is_dir()):
+    print("The specified output path is inaccessible.")
+    sys.exit(1)
 
 edb_list = pathlib.Path(args.ese_file)
 if args.recurse:

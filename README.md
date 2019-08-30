@@ -4,8 +4,8 @@ The tool ese2csv is intended to make analyzing and dumping any ese file simple. 
 
 ```
 C:\>ese2csv.exe --help
-usage: ese2csv.exe [-h] [--make-plugin] [--pluggin CONFIG] [--acquire-live]
-                   [--list-tables] [--recurse]
+usage: ese2csv.exe [-h] [--make-plugin] [--pluggin CONFIG] [--outpath OUTPATH]
+                   [--acquire-live] [--verbose] [--list-tables] [--recurse]
                    [--dump-tables [DUMPTABLES [DUMPTABLES ...]]]
                    [--plugin-args [PLUGINARGS [PLUGINARGS ...]]]
                    ese_file
@@ -21,7 +21,10 @@ optional arguments:
                         specified ese.
   --pluggin CONFIG, -p CONFIG
                         Use a plugin that defines fields in the ese database.
+  --outpath OUTPATH, -o OUTPATH
+                        The directory to which the CSV(s) will be written.
   --acquire-live, -a    Use FGET to extract locked file for processing.
+  --verbose, -v         Generate Verbose output for debugging.
   --list-tables, -l     List all tables in the ese.
   --recurse, -r         Recurse subdirectories to find ese in path.
   --dump-tables [DUMPTABLES [DUMPTABLES ...]], -d [DUMPTABLES [DUMPTABLES ...]]
@@ -35,14 +38,23 @@ optional arguments:
 
 ```
 
-The idea of ese2csv is to allow you to dump the data from any ESE database that the libesedb engine can read. However, you can also create a "plugin" for the ese file with the -m option that allows you to use YAML to define the formats for fields, gives them friendly names and provides functions for processing the database. The tool is distributed with one plugin.  The srudb_plugin.py can be used to dump the srum database.  The tool supports wildcards and directory recursion so you can search your drive and let the tool extract what ever it can find.
+The idea of ese2csv is to allow you to dump the data from any ESE database that the libesedb engine can read. However, you can also create a "plugin" for the ese file with the -m option that allows you to use YAML to define the formats for fields, gives them friendly names and provides functions for processing the database. The tool is distributed with two plugin.  The srudb_plugin.py can be used to dump the srum database. spartan_plugin.py is a beta of dumping Edge spartan files that took me 30 minutes to put together with the -m option! The tool supports wildcards and directory recursion so you can search your drive and let the tool extract what ever it can find. The tool assumes the plugins are in the same directory as the executable.
 
-# Dump all the tables in the the srudb.dat file to a csv_files except those ignored by the YAML in the srum_plugin.py. Acquire a copy of the locked srudb.dat file before use. Pass a copy of the already unlocked SOFTWARE registry hive as a plugin argument.
-
-```
-C:>ese2csv.exe -p srum_plugin -a --plugin-args SOFTWARE C:\Windows\System32\sru\srudb.dat
+# Dump all the tables in the the srudb.dat file to a csv_files except those ignored by the YAML in the srum_plugin.py. Acquire a copy of the locked srudb.dat file before use. Pass a copy of the already unlocked SOFTWARE registry hive as a plugin argument.  Output all of the CSV files to c:\
 
 ```
+C:>ese2csv.exe -p srum_plugin -o c:\ -a --plugin-args SOFTWARE -- C:\Windows\System32\sru\srudb.dat
+
+```
+
+
+# Same as above but, in addition to live acquisition of the the srum also do a live acquisition of the SOFTWARE registry hive with functionality from the plugin!
+
+```
+C:>ese2csv.exe -p srum_plugin -a --plugin-args LIVE -- C:\Windows\System32\sru\srudb.dat
+
+```
+
 
 # List the tables (-l) in an ese database.  File must not be locked by the OS. If it is use -a (acquire).
 
@@ -154,6 +166,45 @@ Table {B6D82AF1-F780-4E17-8077-6CB9AD8A6FC4} aka Unknown3 has 98 records
 C:>ese2csv.exe -p srudb_config -d "Network Usage" -- srudb.dat
 srudb.dat True
 Processing Network Usage
+```
+
+
+# Creating a plugin.
+
+```
+I know this needs to be flushed out more but here is some basic documentation.
+
+Start out your plugins with the -m option and redirecting it to a file.  Then edit the plugin and customize the output
+
+Example: C:>ese2csv.exe -ma c:\windows\system32\sru\srudb.dat > srudb_plugin.py
+
+You can place 4 "call back" functions in your plugin that are executed automatically by ese2csv.
+
+plugin_init(ese_database)  - This function will receive one argument. The ese_database. It is called when the program first loads and can be used to setup data structures that other functions depend upon.
+
+plugin_modify_header(list_of_headers, table_name)  - This function is called after the headers are read from the ESE database before they are written to the CSV.  This is your chance to add or change the headers.
+
+plugin_modify_row(list_of_row_values, table_name)  - This function is called for every row in the ESE before itis written to the CSV.  This is your chance to add to or modify rows.   This is also where you can accumulate values or do additional processing or row data.
+
+plugin_end_of_file(csv_writer_object, table_name)  - This function is called before the csv file is closed.   WRite your accumulated values or clean up data structures.
+
+There are also built in functions that are available inside the plugin for you to call
+lookup("yaml table name", value)   - Will lookup the valuein the the specified YAML lookup table (defined in the yaml or by table_reference entries).
+extract_live_file(live_path)  - Takes in a path to a file locked by the OS and returns a path to an unlocked copy that was extracted with FGET.EXE
+smart_retrieve(ese_db, rownum, colnum)  - Retrieves the specified row and column from the ese database
+blob_to_string(bytes)   -  Attempts to convert the bytes into a string 
+ole_timestamp(bytes)  - Takes in bytes and interprets it as an OLE timestamp
+file_timestamp(bytes)  - Takes in bytes and interprets it as a File Timestamp
+
+The variable args is a list containing the arguments passwd to --plugin-args on the CLI
+
+You can also create your own functions. These functions are called by setting the format fields in the YAML.  See srudb_plugin for example.
+
+YAML format can be in the form of:
+None  -  Do Nothing to data.  Put in CSV as is.
+function:function_name     Call function_name and pass it the data.  Put what is returned in the CSV
+lookup:YAML_LOOKUP_TABLE    Call lookup("YAML_LOOKUP_TABLE", current_value) and put what is returned in the CSV.
+
 ```
 
 
