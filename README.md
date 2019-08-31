@@ -40,23 +40,23 @@ optional arguments:
 
 The idea of ese2csv is to allow you to dump the data from any ESE database that the libesedb engine can read. However, you can also create a "plugin" for the ese file with the -m option that allows you to use YAML to define the formats for fields, gives them friendly names and provides functions for processing the database. The tool is distributed with two plugin.  The srudb_plugin.py can be used to dump the srum database. spartan_plugin.py is a beta of dumping Edge spartan files that took me 30 minutes to put together with the -m option! The tool supports wildcards and directory recursion so you can search your drive and let the tool extract what ever it can find. The tool assumes the plugins are in the same directory as the executable.
 
-# Dump all the tables in the the srudb.dat file to a csv_files except those ignored by the YAML in the srum_plugin.py. Acquire a copy of the locked srudb.dat file before use. Pass a copy of the already unlocked SOFTWARE registry hive as a plugin argument.  Output all of the CSV files to c:\
+Two slightly confusing argument are -d and -p.  Both of those can be followed by multiple parameters. For example, -d can be followed by multiple table names separated by spaces. ese2csv will dump each of those table names. -p can be followed by multiple plugin arguments.  All of them will be passed on to the plugin for processing. So how does the ese2csv.exe command line know when your done with your list of table names or plugin arguments?  With Python programs you end these list by providing another optional argument.  If you use -p or -d as the last argument before the name of your ese file then you end the list with double dash (--).
+
+## Dump all the tables in the the specified srudb.dat file to csv_files (default). Acquire a copy of the locked srudb.dat file before use (-a). Ignored tables specified by the YAML  and use Table, Field names specified in in the srum_plugin.py (-p srum_plugin).  Also tell the plugin to live acquire the software registry hive (--plugin-args LIVE) . Output all of the CSV files to the root of the file system (-o c:\)
 
 ```
-C:>ese2csv.exe -p srum_plugin -o c:\ -a --plugin-args SOFTWARE -- C:\Windows\System32\sru\srudb.dat
-
-```
-
-
-# Same as above but, in addition to live acquisition of the the srum also do a live acquisition of the SOFTWARE registry hive with functionality from the plugin!
-
-```
-C:>ese2csv.exe -p srum_plugin -a --plugin-args LIVE -- C:\Windows\System32\sru\srudb.dat
-
+C:>ese2csv.exe -p srum_plugin -o c:\ -a --plugin-args LIVE -- C:\Windows\System32\sru\srudb.dat
 ```
 
 
-# List the tables (-l) in an ese database.  File must not be locked by the OS. If it is use -a (acquire).
+## Same as above but provide the name of the SOFTWARE registry hive to the plugin and write to the current directory.
+
+```
+C:>ese2csv.exe -p srum_plugin -a --plugin-args C:\SOFTWARE -- C:\Windows\System32\sru\srudb.dat
+```
+
+
+## List the tables (-l) in an ese database. File must not be locked by the OS. If it is use -a (acquire).
 
 ```
 C:>ese2csv.exe -l C:\Windows\SoftwareDistribution\DataStore\DataStore.edb
@@ -91,7 +91,7 @@ Table tbPerSrvUpdate7c8a5e85b4eca34cb0451dfa50104289 has 713 records
 Table tbPerSrvUserUpdateData7c8a5e85b4eca34cb0451dfa50104289 has 0 records
 ```
 
-# Find all *.edb files in c:\ and list their table contents. -r (recurse) all subdirectories and -a (acquire live files) any locked files with FGET before you -l (list tables) list the tables.
+## Find all *.edb files in c:\ and list their table contents. Recurse (-r) all subdirectories and acquire live files (-a) with FGET before you list tables (-l).
 
 ```
 C:\> ese2csv.exe -ral "C:\*.edb"
@@ -110,7 +110,7 @@ Table SystemIndex_1 has 18 records
 <TRUNCATED>
 ```
 
-# Recursivly (-r) go through every *.edb file in c:\. Acquire (-a) a copy of the locked file. Find the table named tbTimers in one of them and dump (-d) it.
+## Recursivly (-r) go through every *.edb file in c:\. Acquire (-a) a copy of the locked file. Find the table named tbTimers in one of them and dump (-d) it.
 
 ```
 C:\Users\Win10Lab\Desktop>ese2csv.exe -rad tbTimers -- "C:\*.edb"
@@ -121,7 +121,7 @@ TimerId,ExpirationTime,IdleOnly,NetworkOnly
 b'e763a82909861e4db7cd5668f857f1db',b'31354874915ed501',0,0
 ```
 
-# Dump the dbTimers table without a plugin specifying the full path. Since no -a is provided the file must not be locked by the OS.
+## Dump the dbTimers table without a plugin specifying the full path. Since no -a is provided the file must not be locked by the OS.
 
 ```
 C:>ese2csv.exe -d tbTimers -- C:\Windows\SoftwareDistribution\DataStore\DataStore.edb
@@ -134,12 +134,14 @@ b'e763a82909861e4db7cd5668f857f1db',b'eaaadd49c85dd501',0,0
 ```
 
 
-# Make (-m) a srum plugin template (which requires editing)
+## Make (-m) a srum plugin template (which requires editing)
+
 ```
 C:>ese2csv.exe -ma c:\windows\system32\sru\srudb.dat > srudb_plugin.py
 ```
 
-# After editing the YAML and functions in the new srum plugin use it (-p) to list new friendly table names
+## After editing the YAML and functions in the new srum plugin use it (-p) to list new friendly table names
+
 ```
 C:>ese2csv.exe -p srudb_plugin -l srudb.dat
 srudb.dat True
@@ -160,7 +162,8 @@ Table {5C8CF1C7-7257-4F13-B223-970EF5939312} aka Unknown1 has 16982 records
 Table {7ACBBAA3-D029-4BE4-9A7A-0885927F1D8F} aka Unknown2 has 1544 records
 Table {B6D82AF1-F780-4E17-8077-6CB9AD8A6FC4} aka Unknown3 has 98 records
 ```
-# And dump a table based on its friendly name
+
+## And dump a table based on its friendly name
 
 ```
 C:>ese2csv.exe -p srudb_config -d "Network Usage" -- srudb.dat
@@ -169,69 +172,42 @@ Processing Network Usage
 ```
 
 
-# Creating a plugin.
+## Creating a plugin.
 
-```
+
 I know this needs to be flushed out more but here is some basic documentation.
 
-Start out your plugins with the -m option and redirecting it to a file.  Then edit the plugin and customize the output
+Start out your plugins with the -m option and redirecting it to a file.  Then edit the plugin and customize the output. This example creates a plugin for the srudb.dat file.
 
-Example: C:>ese2csv.exe -ma c:\windows\system32\sru\srudb.dat > srudb_plugin.py
+```
+C:>ese2csv.exe -ma c:\windows\system32\sru\srudb.dat > srudb_plugin.py
+```
 
-You can place 4 "call back" functions in your plugin that are executed automatically by ese2csv.
+You can place four "call back" functions in your plugin that are executed automatically by ese2csv.
 
-plugin_init(ese_database)  - This function will receive one argument. The ese_database. It is called when the program first loads and can be used to setup data structures that other functions depend upon.
-
-plugin_modify_header(list_of_headers, table_name)  - This function is called after the headers are read from the ESE database before they are written to the CSV.  This is your chance to add or change the headers.
-
-plugin_modify_row(list_of_row_values, table_name)  - This function is called for every row in the ESE before itis written to the CSV.  This is your chance to add to or modify rows.   This is also where you can accumulate values or do additional processing or row data.
-
-plugin_end_of_file(csv_writer_object, table_name)  - This function is called before the csv file is closed.   WRite your accumulated values or clean up data structures.
+ - **plugin_init(ese_database)**  - This function will receive one argument. The ese_database. It is called when the program first loads and can be used to setup data structures that other functions depend upon.
+ - **plugin_modify_header(list_of_headers, table_name)**  - This function is called after the headers are read from the ESE database before they are written to the CSV.  This is your chance to add or change the headers.
+ - **plugin_modify_row(list_of_row_values, table_name)**  - This function is called for every row in the ESE before itis written to the CSV.  This is your chance to add to or modify rows.   This is also where you can accumulate values or do additional processing or row data.
+ - **plugin_end_of_file(csv_writer_object, table_name)**  - This function is called before the csv file is closed.   Write your accumulated values or clean up data structures.
 
 There are also built in functions that are available inside the plugin for you to call
-lookup("yaml table name", value)   - Will lookup the valuein the the specified YAML lookup table (defined in the yaml or by table_reference entries).
-extract_live_file(live_path)  - Takes in a path to a file locked by the OS and returns a path to an unlocked copy that was extracted with FGET.EXE
-smart_retrieve(ese_db, rownum, colnum)  - Retrieves the specified row and column from the ese database
-blob_to_string(bytes)   -  Attempts to convert the bytes into a string 
-ole_timestamp(bytes)  - Takes in bytes and interprets it as an OLE timestamp
-file_timestamp(bytes)  - Takes in bytes and interprets it as a File Timestamp
 
-The variable args is a list containing the arguments passwd to --plugin-args on the CLI
+ - **lookup("yaml table name", value)**   - Will lookup the value in the the specified YAML lookup table (defined in the yaml or by
+   table_reference entries).
+ - **extract_live_file(live_path)**  - Takes in a path to a file locked by
+   the OS and returns a path to an unlocked copy that was extracted with FGET.EXE
+ - **smart_retrieve(ese_db, rownum, colnum)**  - Retrieves the specified row and column from the ese database
+ - **blob_to_string(bytes)**   -  Attempts to convert the bytes into a
+   string
+ - **ole_timestamp(bytes)**  - Takes in bytes and interprets it as an OLE timestamp
+ - **file_timestamp(bytes)**  - Takes in bytes and interprets it as a File Timestamp
+ - **args** - The variable args is a list containing the arguments passwd to --plugin-args on the CLI
 
 You can also create your own functions. These functions are called by setting the format fields in the YAML.  See srudb_plugin for example.
 
-YAML format can be in the form of:
-None  -  Do Nothing to data.  Put in CSV as is.
-function:function_name     Call function_name and pass it the data.  Put what is returned in the CSV
-lookup:YAML_LOOKUP_TABLE    Call lookup("YAML_LOOKUP_TABLE", current_value) and put what is returned in the CSV.
+YAML format field can be in the form of:
 
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ - **None**  -  Do Nothing to data.  Put in CSV as is.
+   
+ - **function:function_name**   - Call function_name and pass it the data. Put what is returned in the CSV
+ - **lookup:YAML_LOOKUP_TABLE**  - Call lookup("YAML_LOOKUP_TABLE",   current_value) and put what is returned in the CSV.
