@@ -4,6 +4,230 @@ lookups:
     0: zero
     1: one
 tables:
+  BookSetMembers:
+    fields:
+      MemberId:
+        format: None
+        friendly name: MemberId
+        ignore: 'no'
+      Name:
+        format: None
+        friendly name: Name
+        ignore: 'no'
+      RowId:
+        format: None
+        friendly name: RowId
+        ignore: 'no'
+      Type:
+        format: None
+        friendly name: Type
+        ignore: 'no'
+    ignore: 'no'
+    name: BookSetMembers
+  BookSetShareRights:
+    fields:
+      AccountId:
+        format: None
+        friendly name: AccountId
+        ignore: 'no'
+      BookSetId:
+        format: None
+        friendly name: BookSetId
+        ignore: 'no'
+      ErrorCode:
+        format: None
+        friendly name: ErrorCode
+        ignore: 'no'
+      MemberId:
+        format: None
+        friendly name: MemberId
+        ignore: 'no'
+      Permissions:
+        format: None
+        friendly name: Permissions
+        ignore: 'no'
+      RowId:
+        format: None
+        friendly name: RowId
+        ignore: 'no'
+      SyncStatus:
+        format: None
+        friendly name: SyncStatus
+        ignore: 'no'
+    ignore: 'no'
+    name: BookSetShareRights
+  BookSets:
+    fields:
+      AccountId:
+        format: None
+        friendly name: AccountId
+        ignore: 'no'
+      FullyAppliedSyncToken:
+        format: None
+        friendly name: FullyAppliedSyncToken
+        ignore: 'no'
+      IsDeleted:
+        format: None
+        friendly name: IsDeleted
+        ignore: 'no'
+      IsHydrationNeeded:
+        format: None
+        friendly name: IsHydrationNeeded
+        ignore: 'no'
+      IsPushAllowed:
+        format: None
+        friendly name: IsPushAllowed
+        ignore: 'no'
+      ItemId:
+        format: None
+        friendly name: ItemId
+        ignore: 'no'
+      Name:
+        format: None
+        friendly name: Name
+        ignore: 'no'
+      OpenedBookId:
+        format: None
+        friendly name: OpenedBookId
+        ignore: 'no'
+      OwnerId:
+        format: None
+        friendly name: OwnerId
+        ignore: 'no'
+      RowId:
+        format: None
+        friendly name: RowId
+        ignore: 'no'
+      SyncId:
+        format: None
+        friendly name: SyncId
+        ignore: 'no'
+      SyncToken:
+        format: None
+        friendly name: SyncToken
+        ignore: 'no'
+      SyncTokenVersion:
+        format: None
+        friendly name: SyncTokenVersion
+        ignore: 'no'
+      UpdatedDate:
+        format: None
+        friendly name: UpdatedDate
+        ignore: 'no'
+    ignore: 'no'
+    name: BookSets
+  GenericAutoSuggestStorage:
+    fields:
+      DateAccessed:
+        format: None
+        friendly name: DateAccessed
+        ignore: 'no'
+      DateUpdated:
+        format: None
+        friendly name: DateUpdated
+        ignore: 'no'
+      IsDeleted:
+        format: None
+        friendly name: IsDeleted
+        ignore: 'no'
+      IsShaGenerated:
+        format: None
+        friendly name: IsShaGenerated
+        ignore: 'no'
+      ItemId:
+        format: None
+        friendly name: ItemId
+        ignore: 'no'
+      Key:
+        format: None
+        friendly name: Key
+        ignore: 'no'
+      RowId:
+        format: None
+        friendly name: RowId
+        ignore: 'no'
+      URL:
+        format: None
+        friendly name: URL
+        ignore: 'no'
+      UseCount:
+        format: None
+        friendly name: UseCount
+        ignore: 'no'
+      Value:
+        format: None
+        friendly name: Value
+        ignore: 'no'
+    ignore: 'no'
+    name: GenericAutoSuggestStorage
+  PinningRules:
+    fields:
+      Host:
+        format: None
+        friendly name: Host
+        ignore: 'no'
+      Port:
+        format: None
+        friendly name: Port
+        ignore: 'no'
+      RowId:
+        format: None
+        friendly name: RowId
+        ignore: 'no'
+      Scheme:
+        format: None
+        friendly name: Scheme
+        ignore: 'no'
+      UriHash:
+        format: None
+        friendly name: UriHash
+        ignore: 'no'
+    ignore: 'no'
+    name: PinningRules
+  UserDataSourceInfo:
+    fields:
+      DataSourceId:
+        format: None
+        friendly name: DataSourceId
+        ignore: 'no'
+      DataSourceType:
+        format: None
+        friendly name: DataSourceType
+        ignore: 'no'
+      LastCommunicationUTC:
+        format: None
+        friendly name: LastCommunicationUTC
+        ignore: 'no'
+      RowId:
+        format: None
+        friendly name: RowId
+        ignore: 'no'
+    ignore: 'no'
+    name: UserDataSourceInfo
+  WebsitePermissions:
+    fields:
+      FullscreenPermissionStatus:
+        format: None
+        friendly name: FullscreenPermissionStatus
+        ignore: 'no'
+      LocationPermissionStatus:
+        format: None
+        friendly name: LocationPermissionStatus
+        ignore: 'no'
+      RowId:
+        format: None
+        friendly name: RowId
+        ignore: 'no'
+      URL:
+        format: None
+        friendly name: URL
+        ignore: 'no'
+      UrlHash:
+        format: None
+        friendly name: UrlHash
+        ignore: 'no'
+    ignore: 'no'
+    name: WebsitePermissions
   AutoFormFillAddressStorage:
     fields:
       AddressLine1:
