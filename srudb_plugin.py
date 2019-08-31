@@ -1124,6 +1124,23 @@ import pathlib
 import sys
 from Registry.Registry import Registry
 
+def load_registry_sids(reg_file):
+    """Given Software hive find SID usernames"""
+    sids = {}
+    profile_key = r"Microsoft\Windows NT\CurrentVersion\ProfileList"
+    tgt_value = "ProfileImagePath"
+    try:
+        reg_handle = Registry(reg_file)
+        key_handle = reg_handle.open(profile_key)
+        for eachsid in key_handle.subkeys():
+            sids_path = eachsid.value(tgt_value).value()
+            sids[eachsid.name()] = sids_path.split("\\")[-1]
+    except Exception as e:
+        print(str(e))
+        return {}
+    print("Loaded SIDS", sids)
+    return sids
+
 def load_interfaces(reg_file):
     try:
         reg_handle = Registry(reg_file)
@@ -1151,8 +1168,10 @@ wireless_lookup = {}
 def lookup_wireless(wireless_id):
     return wireless_lookup.get(str(wireless_id),"")
 
+registry_sids = {}
 def plugin_init(ese_database):
     global wireless_lookup
+    global registry_sids
     #table_names = " ".join([x.name for x in ese_database.tables])
     #print("Received Arguments", args)
     if args and args[0].lower() == "live":
@@ -1160,10 +1179,12 @@ def plugin_init(ese_database):
         if live_path.exists():
             regpath = extract_live_file(live_path)
             wireless_lookup = load_interfaces(str(regpath))
+            registry_sids = load_registry_sids(str(regpath))
         else:
             print("Unable to find the SOFTWARE registry on this system.")
     elif args and pathlib.Path(args[0]).exists():
         wireless_lookup = load_interfaces(args[0])
+        registry_sids = load_registry_sids(str(regpath))
     elif args:
         print(f"Registry file {str(args[0])} not found.")
     #print("Plugin Initialized for ", table_names)
@@ -1210,7 +1231,10 @@ def BinarySIDtoStringSID(sid_str):
             str_sid_components.append(struct.unpack("<L", authority)[0])
             start += 4
             sid_str = "S-%s" % ("-".join([str(x) for x in str_sid_components]))
-    sid_name = lookup("known_sids",sid_str)
+    if sid_str in registry_sids:
+        sid_name = registry_sids.get(sid_str)
+    else:
+        sid_name = lookup("known_sids",sid_str)
     return "{} ({})".format(sid_str,sid_name)
 
 def get_app_id(data):
