@@ -1144,11 +1144,11 @@ def load_registry_sids(reg_file):
 def load_interfaces(reg_file):
     try:
         reg_handle = Registry(reg_file)
+        int_keys = reg_handle.open('Microsoft\\WlanSvc\\Interfaces')
     except Exception as e:
         print("I could not open the specified SOFTWARE registry key. It is usually located in \Windows\system32\config but is locked by the OS.")
         print("Error : ", str(e))
-        sys.exit(1)
-    int_keys = reg_handle.open('Microsoft\\WlanSvc\\Interfaces')
+        return {}   
     profile_lookup = {}
     for eachinterface in int_keys.subkeys():
         if len(eachinterface.subkeys())==0:
@@ -1238,7 +1238,10 @@ def BinarySIDtoStringSID(sid_str):
     return "{} ({})".format(sid_str,sid_name)
 
 def get_app_id(data):
-    app_type, app_value = lookup("app_id", data)
+    app_record = lookup("app_id", data)
+    if not app_record:
+        return "Application ID lookup failed."
+    app_type, app_value = app_record  
     if app_type == 3:
         data = BinarySIDtoStringSID(app_value)
     elif app_type == 2:

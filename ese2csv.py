@@ -100,6 +100,17 @@ def smart_retrieve(ese_table, ese_record_num, column_number):
         col_data = "Empty"
     return col_data
 
+def plugin_list():
+    if getattr(sys, 'frozen', False):
+        program_dir = pathlib.Path(sys.executable)
+    elif __file__:
+        program_dir = pathlib.Path(__file__)
+    plugpaths = pathlib.Path(program_dir).parent.glob("*_plugin.py")
+    plist = [x.name[:-3] for x in plugpaths]
+    if not plist:
+        plist = ['No Plugins found in path {}'.format(program_dir)]
+    return plist
+
 def make_config(database):
     yaml_struct = {'tables':{}}
     for each_table in database.tables:
@@ -308,7 +319,7 @@ def load_yaml_table_refs(ese_db, plugin):
 
 parser = argparse.ArgumentParser(description="Find and dump ESE databases.")
 parser.add_argument("--make-plugin", "-m", dest="makeconfig", help="Produce an editable shell of a plugin for the specified ese.",action="store_true")
-parser.add_argument("--pluggin", "-p", dest="config", help="Use a plugin that defines fields in the ese database.")
+parser.add_argument("--pluggin", "-p", choices = plugin_list(), dest="config", help="Use a plugin that defines fields in the ese database.")
 parser.add_argument("--outpath", "-o", dest="outpath", default = str(pathlib.Path.cwd()), help="The directory to which the CSV(s) will be written.")
 parser.add_argument("--acquire-live", "-a", dest="acquire", help="Use FGET to extract locked file for processing.",action="store_true")
 parser.add_argument("--verbose", "-v", dest="verbose", help="Generate Verbose output for debugging.",action="store_true")

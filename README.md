@@ -42,17 +42,17 @@ The idea of ese2csv is to allow you to dump the data from any ESE database that 
 
 Two slightly confusing argument are -d and -p.  Both of those can be followed by multiple parameters. For example, -d can be followed by multiple table names separated by spaces. ese2csv will dump each of those table names. -p can be followed by multiple plugin arguments.  All of them will be passed on to the plugin for processing. So how does the ese2csv.exe command line know when your done with your list of table names or plugin arguments?  With Python programs you end these list by providing another optional argument.  If you use -p or -d as the last argument before the name of your ese file then you end the list with double dash (--).
 
-## Dump all the tables in the the specified srudb.dat file to csv_files (default). Acquire a copy of the locked srudb.dat file before use (-a). Ignored tables specified by the YAML  and use Table, Field names specified in in the srum_plugin.py (-p srum_plugin).  Also tell the plugin to live acquire the software registry hive (--plugin-args LIVE) . Output all of the CSV files to the root of the file system (-o c:\)
+## Dump all the tables in the the specified srudb.dat file to csv_files (default). Acquire a copy of the locked srudb.dat file before use (-a). Ignored tables specified by the YAML  and use Table, Field names specified in in the srudb_plugin.py (-p srudb_plugin).  Also tell the plugin to live acquire the software registry hive (--plugin-args LIVE) . Output all of the CSV files to the root of the file system (-o c:\)
 
 ```
-C:>ese2csv.exe -p srum_plugin -o c:\ -a --plugin-args LIVE -- C:\Windows\System32\sru\srudb.dat
+C:>ese2csv.exe -p srudb_plugin -o c:\ -a --plugin-args LIVE -- C:\Windows\System32\sru\srudb.dat
 ```
 
 
 ## Same as above but provide the name of the SOFTWARE registry hive to the plugin and write to the current directory.
 
 ```
-C:>ese2csv.exe -p srum_plugin -a --plugin-args C:\SOFTWARE -- C:\Windows\System32\sru\srudb.dat
+C:>ese2csv.exe -p srudb_plugin -a --plugin-args C:\SOFTWARE -- C:\Windows\System32\sru\srudb.dat
 ```
 
 
