@@ -9,6 +9,7 @@ import pathlib
 import importlib
 import re
 import sys
+import os
 import tempfile
 import urllib.request
 import subprocess
@@ -238,6 +239,33 @@ def extract_live_file(live_path):
         print("ERROR running FGET.EXE: {}".format(out1))
         sys.exit(1)
 
+def extract_live_ese(tgt_file):
+    try:
+        tmp_dir = tempfile.mkdtemp()
+        esentutl_path = pathlib.Path(os.environ.get("COMSPEC")).parent / "esentutl.exe"
+        tgt_path = pathlib.Path(tgt_file)
+        destination = pathlib.Path(tmp_dir) / tgt_path.name
+        if not tgt_path.exists():
+            print("Unable to live aquire ese file {}. Target ESE path not found.".format(str(tgt_path)))
+            sys.exit(1)
+        if esentutl_path.exists():
+            print(f"Extracting {str(tgt_path)} with esentutl.exe")
+            cmdline = r'{} /y "{}" /vss /d "{}"'.format(str(esentutl_path), str(tgt_path), str(destination))
+        else:
+            print("ESENTUTL.EXE not found.  Reverting to fget.")
+            return extract_live_file(tgt_file)
+        print(cmdline)
+        phandle = subprocess.Popen(cmdline, shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out1,_ = phandle.communicate()
+    except Exception as e:
+        print("Error during live ese aquisition {}\n{}\n".format(str(e)))
+        return None
+    if b"success" in out1.lower():
+        return destination
+    else:
+        print("Unable to determine success or failure. \n{}\n".format( out1.decode() ))
+    return None
+
 def create_csv(database, table_name, yaml= {}):
     friendly_table_name = table_name
     table_yaml = yaml.get('tables',{}).get(table_name,{})
@@ -360,11 +388,13 @@ if args.config:
         plugin.ole_timestatmp = ole_timestamp
         plugin.file_timestamp = file_timestamp
         plugin.extract_live_file = extract_live_file
+        plugin.extract_live_ese = extract_live_ese
         plugin.args = args.pluginargs
 
+file_count = 0
 for edb_path in edb_list:
     edb_path_original = str(edb_path)
-
+    file_count += 1
     print(f"Processing File {edb_path_original}")
 
     if not edb_path.exists():
@@ -372,16 +402,19 @@ for edb_path in edb_list:
         continue
 
     if args.acquire:
-        edb_path = extract_live_file(edb_path)
+        edb_path = extract_live_ese(edb_path)
 
     ese_db = pyesedb.file()
     try:
         ese_db.open(str(edb_path))
     except Exception as e:
-        print(f"Unable to open ESE. Perhaps it is locked (try -a) or it is not an ese. \n\n {str(e)}\n")
+        if "libesedb_file_open_wide" in str(e):
+            print("Not an ese file. Skipping.")
+        else:
+            print(f"Unable to open ESE. Perhaps it is locked (try -a) or it is not an ese. \n\n{str(e)}\n")
         if args.acquire:
             edb_path.unlink()
-            continue
+        continue
 
     if yaml_config:
             yaml_config = load_yaml_table_refs(ese_db, plugin)
@@ -416,4 +449,5 @@ for edb_path in edb_list:
     ese_db.close()
     if args.acquire:
         edb_path.unlink()
-        
+
+print(f"{file_count} files matched the file path criteria specified.")
