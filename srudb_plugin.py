@@ -1184,7 +1184,7 @@ def plugin_init(ese_database):
             print("Unable to find the SOFTWARE registry on this system.")
     elif args and pathlib.Path(args[0]).exists():
         wireless_lookup = load_interfaces(args[0])
-        registry_sids = load_registry_sids(str(regpath))
+        registry_sids = load_registry_sids(str(args[0]))
     elif args:
         print(f"Registry file {str(args[0])} not found.")
     #print("Plugin Initialized for ", table_names)
@@ -1244,7 +1244,7 @@ def get_app_id(data):
     app_type, app_value = app_record  
     if app_type == 3:
         data = BinarySIDtoStringSID(app_value)
-    elif app_type == 2:
+    else:
         data = blob_to_string(app_value)
     return data
 
