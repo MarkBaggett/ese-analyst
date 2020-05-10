@@ -1177,7 +1177,7 @@ def plugin_init(ese_database):
     if args and args[0].lower() == "live":
         live_path = pathlib.Path("c:\\Windows\\System32\\Config\\SOFTWARE")
         if live_path.exists():
-            regpath = extract_live_file(live_path)
+            regpath = extract_live_ese(live_path)
             wireless_lookup = load_interfaces(str(regpath))
             registry_sids = load_registry_sids(str(regpath))
         else:
