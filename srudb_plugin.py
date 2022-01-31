@@ -1157,7 +1157,7 @@ def load_interfaces(reg_file):
             profileid = [x.value() for x in eachprofile.values() if x.name()=="ProfileIndex"][0]
             metadata = eachprofile.subkey("MetaData").values()
             for eachvalue in metadata:
-                if eachvalue.name()=="Channel Hints":
+                if eachvalue.name() in ["Channel Hints", "Band Channel Hints"]:
                     channelhintraw = eachvalue.value()
                     hintlength = struct.unpack("I", channelhintraw[0:4])[0]
                     name = channelhintraw[4:hintlength+4] 
